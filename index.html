@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Scheduler — CSE & Biotech</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #d4c9be;
+    --bg2:      #ddd4c8;
+    --bg3:      #ccc0b4;
+    --border:   #b8aaa0;
+    --cse:      #5a82b8;
+    --cse-dim:  #c8d8ef;
+    --bio:      #9b8ec4;
+    --bio-dim:  #e4dff5;
+    --accent:   #b06840;
+    --muted:    #8c7e76;
+    --text:     #2a2320;
+    --text2:    #6a5e58;
+    --radius:   10px;
+    --mono:     'DM Mono', monospace;
+    --serif:    'Fraunces', serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 40px 48px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .brand { display: flex; flex-direction: column; gap: 6px; }
+  .brand-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .brand-title {
+    font-family: var(--serif);
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .header-stats { display: flex; gap: 24px; }
+  .stat { text-align: right; }
+  .stat-num {
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-label { color: var(--muted); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    gap: 20px;
+    padding: 14px 48px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; color: var(--text2); font-size: 11px; letter-spacing: .06em; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ── SEARCH BAR ── */
+  .toolbar {
+    padding: 16px 48px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
+  .search-wrap input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 12px 8px 34px;
+    border-radius: var(--radius);
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-icon {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 14px; pointer-events: none;
+  }
+  .filter-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    letter-spacing: .06em;
+    transition: all .15s;
+  }
+  .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active-cse { border-color: var(--cse); color: var(--cse); }
+  .filter-btn.active-bio { border-color: var(--bio); color: var(--bio); }
+
+  /* ── MAIN GRID ── */
+  .container { display: flex; min-height: calc(100vh - 220px); }
+
+  /* ── DAY SIDEBAR ── */
+  .sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+  }
+  .sidebar-label {
+    padding: 0 20px 12px;
+    font-size: 9px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .day-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background .15s;
+    border-left: 2px solid transparent;
+  }
+  .day-btn:hover { background: var(--bg2); }
+  .day-btn.active {
+    background: var(--bg2);
+    border-left-color: var(--accent);
+  }
+  .day-num {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--muted);
+    line-height: 1;
+    min-width: 28px;
+  }
+  .day-btn.active .day-num { color: var(--accent); }
+  .day-info { display: flex; flex-direction: column; gap: 2px; }
+  .day-exams { font-size: 10px; color: var(--text2); line-height: 1.4; }
+  .day-exams span { display: block; }
+  .day-exams .c-cse { color: var(--cse); }
+  .day-exams .c-bio { color: var(--bio); }
+
+  /* ── CONTENT PANEL ── */
+  .content { flex: 1; padding: 28px 32px; overflow-y: auto; }
+
+  /* ── DAY HEADER ── */
+  .day-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .day-title {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .exam-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    letter-spacing: .04em;
+  }
+  .pill-cse { background: var(--cse-dim); color: var(--cse); border: 1px solid var(--cse); }
+  .pill-bio { background: var(--bio-dim); color: var(--bio); border: 1px solid var(--bio); }
+
+  /* ── HALL CARDS ── */
+  .halls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .hall-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+    animation: fadein .25s ease both;
+  }
+  .hall-card:hover { border-color: #3a3f55; transform: translateY(-2px); }
+
+  @keyframes fadein {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hall-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+  .hall-name {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .capacity-badge {
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: var(--muted);
+  }
+  .cap-full { color: var(--bio); }
+
+  .hall-streams { display: flex; gap: 0; }
+  .stream-section {
+    flex: 1;
+    padding: 12px 14px;
+    border-right: 1px solid var(--border);
+  }
+  .stream-section:last-child { border-right: none; }
+
+  .stream-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .stream-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .stream-exam { font-size: 11px; font-weight: 500; line-height: 1.3; }
+  .s-cse { color: var(--cse); }
+  .s-bio { color: var(--bio); }
+
+  .reg-range {
+    display: inline-block;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    width: 100%;
+    margin-bottom: 6px;
+  }
+  .reg-range strong { color: var(--text); }
+
+  .reg-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    max-height: 56px;
+    overflow: hidden;
+  }
+  .reg-chips.expanded { max-height: none; }
+  .chip {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    letter-spacing: .04em;
+    cursor: default;
+  }
+  .chip-cse { background: var(--cse-dim); color: var(--cse); }
+  .chip-bio { background: var(--bio-dim); color: var(--bio); }
+  .chip.highlight { outline: 1.5px solid var(--accent); }
+
+  .expand-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    cursor: pointer;
+    padding: 2px 0;
+    margin-top: 4px;
+    display: block;
+  }
+  .expand-btn:hover { color: var(--text); }
+
+  /* ── STUDENT LOOKUP ── */
+  .lookup-result {
+    background: var(--bg2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    animation: fadein .2s ease;
+  }
+  .lookup-title { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .lookup-reg { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--accent); }
+  .lookup-rows { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+  .lookup-row { font-size: 12px; color: var(--text2); }
+  .lookup-row strong { color: var(--text); }
+
+  /* ── EMPTY / NO RESULT ── */
+  .empty { padding: 40px; text-align: center; color: var(--muted); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-sub">Academic Scheduling System</span>
+    <h1 class="brand-title">Exam Scheduler</h1>
+  </div>
+
+</header>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-dot" style="background:var(--cse)"></div>
+    CSE Stream
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background:var(--bio)"></div>
+    Biotech Stream
+  </div>
+  <div class="legend-item" style="margin-left:auto; color:var(--muted); font-size:10px;">
+    Hall capacity: 50 seats — 25 CSE + 25 Biotech per hall
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="searchInput" placeholder="Search reg no (e.g. 1CS, 15Bio)..." oninput="handleSearch(this.value)">
+  </div>
+  <button class="filter-btn" id="filterAll" onclick="setFilter('all')" style="border-color:var(--accent); color:var(--accent)">All Streams</button>
+  <button class="filter-btn" id="filterCSE" onclick="setFilter('cse')">CSE Only</button>
+  <button class="filter-btn" id="filterBio" onclick="setFilter('bio')">Biotech Only</button>
+</div>
+
+<div class="container">
+  <nav class="sidebar">
+    <div class="sidebar-label">Schedule Days</div>
+    <div id="daySidebar"></div>
+  </nav>
+  <main class="content" id="mainContent"></main>
+</div>
+
+<script>
+// ─── SCHEDULE DATA (generated by greedy algorithm) ───────────────────────────
+const SCHEDULE_DATA = {
+  "cse_subjects": ["Data Structures","Algorithms","Operating Systems","Database Management","Computer Networks","Software Engineering","Theory of Computation"],
+  "bio_subjects": ["Genetics","Biochemistry","Microbiology","Cell Biology","Molecular Biology","Bioinformatics","Immunology"],
+  "schedule": {
+    "1": ["Data Structures","Genetics"],
+    "2": ["Algorithms","Biochemistry"],
+    "3": ["Operating Systems","Microbiology"],
+    "4": ["Database Management","Cell Biology"],
+    "5": ["Computer Networks","Molecular Biology"],
+    "6": ["Software Engineering","Bioinformatics"],
+    "7": ["Theory of Computation","Immunology"]
+  }
+};
+
+// ─── GENERATE HALLS FROM DATA ─────────────────────────────────────────────────
+function generateHalls() {
+  const halls = [];
+  Object.entries(SCHEDULE_DATA.schedule).forEach(([dayStr, exams]) => {
+    const day = parseInt(dayStr);
+    const cseExam = exams.find(e => SCHEDULE_DATA.cse_subjects.includes(e));
+    const bioExam = exams.find(e => SCHEDULE_DATA.bio_subjects.includes(e));
+    // 500 CSE students, 500 Biotech students per exam
+    // 20 halls per day, 25+25 per hall
+    for (let h = 1; h <= 20; h++) {
+      const start = (h-1)*25 + 1;
+      const end   = h * 25;
+      const cseStudents = Array.from({length:25}, (_,i) => `${start+i}CS`);
+      const bioStudents = Array.from({length:25}, (_,i) => `${start+i}Bio`);
+      halls.push({ day, hall: h, cse_exam: cseExam, bio_exam: bioExam, cse_students: cseStudents, bio_students: bioStudents });
+    }
+  });
+  return halls;
+}
+
+const ALL_HALLS = generateHalls();
+let currentDay  = 1;
+let activeFilter = 'all';
+let searchTerm  = '';
+
+// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+function buildSidebar() {
+  const sb = document.getElementById('daySidebar');
+  Object.entries(SCHEDULE_DATA.schedule).forEach(([dayStr, exams]) => {
+    const day = parseInt(dayStr);
+    const cseE = exams.find(e => SCHEDULE_DATA.cse_subjects.includes(e)) || '';
+    const bioE = exams.find(e => SCHEDULE_DATA.bio_subjects.includes(e)) || '';
+    const btn = document.createElement('button');
+    btn.className = 'day-btn' + (day === 1 ? ' active' : '');
+    btn.id = `daybtn-${day}`;
+    btn.onclick = () => selectDay(day);
+    btn.innerHTML = `
+      <span class="day-num">${String(day).padStart(2,'0')}</span>
+      <span class="day-info">
+        <span class="day-exams">
+          <span class="c-cse">${cseE}</span>
+          <span class="c-bio">${bioE}</span>
+        </span>
+      </span>`;
+    sb.appendChild(btn);
+  });
+}
+
+function selectDay(day) {
+  currentDay = day;
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`daybtn-${day}`).classList.add('active');
+  renderContent();
+}
+
+// ─── FILTER ──────────────────────────────────────────────────────────────────
+function setFilter(f) {
+  activeFilter = f;
+  ['filterAll','filterCSE','filterBio'].forEach(id => {
+    const el = document.getElementById(id);
+    el.className = 'filter-btn';
+  });
+  if (f === 'all') { document.getElementById('filterAll').style.cssText = 'border-color:var(--accent);color:var(--accent)'; }
+  if (f === 'cse') { document.getElementById('filterCSE').className = 'filter-btn active-cse'; }
+  if (f === 'bio') { document.getElementById('filterBio').className = 'filter-btn active-bio'; }
+  renderContent();
+}
+
+// ─── SEARCH ──────────────────────────────────────────────────────────────────
+function handleSearch(val) {
+  searchTerm = val.trim().toUpperCase();
+  renderContent();
+}
+
+function findStudent(reg) {
+  const upper = reg.toUpperCase();
+  for (const h of ALL_HALLS) {
+    const inCse = h.cse_students.some(s => s.toUpperCase() === upper);
+    const inBio = h.bio_students.some(s => s.toUpperCase() === upper);
+    if (inCse || inBio) {
+      return { hall: h, stream: inCse ? 'CSE' : 'Biotech', exam: inCse ? h.cse_exam : h.bio_exam };
+    }
+  }
+  return null;
+}
+
+// ─── RENDER MAIN CONTENT ─────────────────────────────────────────────────────
+function renderContent() {
+  const container = document.getElementById('mainContent');
+  const exams = SCHEDULE_DATA.schedule[String(currentDay)];
+  const cseExam = exams.find(e => SCHEDULE_DATA.cse_subjects.includes(e));
+  const bioExam = exams.find(e => SCHEDULE_DATA.bio_subjects.includes(e));
+
+  let html = '';
+
+  // Day header
+  html += `<div class="day-header">
+    <span class="day-title">Day ${currentDay}</span>
+    <div class="exam-pills">
+      <span class="pill pill-cse">CSE: ${cseExam}</span>
+      <span class="pill pill-bio">Bio: ${bioExam}</span>
+    </div>
+  </div>`;
+
+  // Student lookup result
+  if (searchTerm) {
+    const result = findStudent(searchTerm);
+    if (result) {
+      html += `<div class="lookup-result">
+        <div class="lookup-title">Student Lookup</div>
+        <div class="lookup-reg">${searchTerm}</div>
+        <div class="lookup-rows">
+          <div class="lookup-row"><strong>Stream:</strong> ${result.stream}</div>
+          <div class="lookup-row"><strong>Exam:</strong> ${result.exam}</div>
+          <div class="lookup-row"><strong>Hall:</strong> Hall ${result.hall.hall}</div>
+        </div>
+      </div>`;
+      // jump to that day
+      if (result.hall.day !== currentDay) {
+        currentDay = result.hall.day;
+        document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`daybtn-${currentDay}`).classList.add('active');
+      }
+    } else {
+      html += `<div class="lookup-result" style="border-color:var(--muted)">
+        <div class="lookup-title">Student Lookup</div>
+        <div style="color:var(--muted);margin-top:6px">No student found for reg no "${searchTerm}"</div>
+      </div>`;
+    }
+  }
+
+  // Hall cards
+  const dayHalls = ALL_HALLS.filter(h => h.day === currentDay);
+  html += `<div class="halls-grid">`;
+
+  dayHalls.forEach((h, idx) => {
+    const showCse = activeFilter !== 'bio';
+    const showBio = activeFilter !== 'cse';
+
+    const cseRange  = `${h.cse_students[0]} – ${h.cse_students[h.cse_students.length-1]}`;
+    const bioRange  = `${h.bio_students[0]} – ${h.bio_students[h.bio_students.length-1]}`;
+
+    const cseChips = h.cse_students.map(s => {
+      const hl = searchTerm && s.toUpperCase() === searchTerm ? ' highlight' : '';
+      return `<span class="chip chip-cse${hl}">${s}</span>`;
+    }).join('');
+
+    const bioChips = h.bio_students.map(s => {
+      const hl = searchTerm && s.toUpperCase() === searchTerm ? ' highlight' : '';
+      return `<span class="chip chip-bio${hl}">${s}</span>`;
+    }).join('');
+
+    const cardId = `hall-${h.day}-${h.hall}`;
+
+    html += `<div class="hall-card" style="animation-delay:${idx * 0.02}s">
+      <div class="hall-card-header">
+        <span class="hall-name">Hall ${h.hall}</span>
+        <span class="capacity-badge cap-full">50/50 seats</span>
+      </div>
+      <div class="hall-streams">`;
+
+    if (showCse) {
+      html += `<div class="stream-section">
+        <div class="stream-header">
+          <div class="stream-dot" style="background:var(--cse)"></div>
+          <span class="stream-exam s-cse">${h.cse_exam}</span>
+        </div>
+        <div class="reg-range"><strong>${cseRange}</strong></div>
+        <div class="reg-chips" id="${cardId}-cse">${cseChips}</div>
+        <button class="expand-btn" onclick="toggleExpand('${cardId}-cse', this)">show all ↓</button>
+      </div>`;
+    }
+
+    if (showBio) {
+      html += `<div class="stream-section">
+        <div class="stream-header">
+          <div class="stream-dot" style="background:var(--bio)"></div>
+          <span class="stream-exam s-bio">${h.bio_exam}</span>
+        </div>
+        <div class="reg-range"><strong>${bioRange}</strong></div>
+        <div class="reg-chips" id="${cardId}-bio">${bioChips}</div>
+        <button class="expand-btn" onclick="toggleExpand('${cardId}-bio', this)">show all ↓</button>
+      </div>`;
+    }
+
+    html += `</div></div>`;
+  });
+
+  html += `</div>`;
+  container.innerHTML = html;
+
+  // Auto-expand cards where the search term is highlighted
+  if (searchTerm) {
+    document.querySelectorAll('.chip.highlight').forEach(chip => {
+      const chips = chip.closest('.reg-chips');
+      if (chips) {
+        chips.classList.add('expanded');
+        const btn = chips.nextElementSibling;
+        if (btn) btn.textContent = 'show less ↑';
+      }
+    });
+  }
+}
+
+function toggleExpand(id, btn) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.toggle('expanded');
+    btn.textContent = el.classList.contains('expanded') ? 'show less ↑' : 'show all ↓';
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+buildSidebar();
+renderContent();
+</script>
+</body>
+</html>
